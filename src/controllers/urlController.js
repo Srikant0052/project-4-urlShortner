@@ -12,6 +12,7 @@ const isValidRequestBody = (requestBody) => {
     return false;
 }
 const urlRegex = /^(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g
+// const urlCodeRegex = /^[0-9,A-Z]{4}$/
 
 const CreateShortUrl = async (req, res) => {
    try {
@@ -21,6 +22,7 @@ const CreateShortUrl = async (req, res) => {
         return res.status(400).send({ status: false, message: 'Invalid Request parameters. Please provide URL' })
     }
     const{ longUrl } = req.body
+
     if(!isValid(longUrl)){
         return res.status(400).send({tatus: false, message: "longUrl is required"});
     }
@@ -42,9 +44,9 @@ const redirectUrl = async (req, res) => {
     try {
         const requestParams = req.params.urlCode;
        
-        const url = await urlModel.findOne({requestParams}).lean();
+        const url = await urlModel.findOne({urlCode: requestParams}).lean();
         if(url){
-            return res.status(302).send(url.longUrl);
+            return res.status(302).redirect(url.longUrl);
         }else{
             return res.status(404).send({status: false, message: "Url not found"})
         }
