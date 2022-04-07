@@ -4,8 +4,7 @@ const urlSchema = new mongoose.Schema({
     urlCode: {
         type: String,
         unique: true,
-        lowercase: true,
-        trim: true
+        lowercase: true
     },
     longUrl: {
         type: String,
@@ -14,8 +13,7 @@ const urlSchema = new mongoose.Schema({
     },
     shortUrl: {
         type: String,
-        unique: true,
-        trim: true
+        unique: true
     }
 
 }, { timestamps: true })
