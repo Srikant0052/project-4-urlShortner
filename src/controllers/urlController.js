@@ -33,7 +33,6 @@ const isValidRequestBody = (requestBody) => {
     return false;
 }
 const urlRegex = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/
-
 const CreateShortUrl = async (req, res) => {
     try {
         const requestBody = req.body;
@@ -61,7 +60,8 @@ const CreateShortUrl = async (req, res) => {
             const urlCodeExist = await urlModel.findOne({ longUrl }).select({ _id: 0, __v: 0, createdAt: 0, updatedAt: 0 }).lean();
 
             if (urlCodeExist) {
-                await SET_ASYNC(`${longUrl}`, JSON.stringify(urlCodeExist))
+                await SET_ASYNC(`${longUrl}`, JSON.stringify(urlCodeExist), 'EX', 30);
+
                 return res.status(200).send({ status: true, message: "Success", data: urlCodeExist });
             } else {
                 //    const urlCode = shortid.generate();
@@ -70,7 +70,7 @@ const CreateShortUrl = async (req, res) => {
                     while (length--) {                                                   // repeat this length of times
                         let ind = Math.floor(Math.random() * ranges.length);              // get a random range from the ranges object
                         let min = ranges[ind][0].charCodeAt(0),                           // get the minimum char code allowed for this range
-                          max = ranges[ind][1].charCodeAt(0);                           // get the maximum char code allowed for this range
+                            max = ranges[ind][1].charCodeAt(0);                           // get the maximum char code allowed for this range
                         let c = Math.floor(Math.random() * (max - min + 1)) + min;        // get a random char code between min and max
                         str += String.fromCharCode(c);                                    // convert it back into a character and append it to the string str
                     }
@@ -80,7 +80,8 @@ const CreateShortUrl = async (req, res) => {
                 const shortUrl = `${baseUrl}/${urlCode}`;
                 const url = { longUrl, shortUrl, urlCode }
                 const shortUrlCreated = await urlModel.create(url);
-                await SET_ASYNC(`${longUrl}`, JSON.stringify(shortUrlCreated))
+                await SET_ASYNC(`${longUrl}, "EXP" 10`, JSON.stringify(shortUrlCreated), 'EX', 30);
+
                 res.status(201).send({ status: true, message: "success", data: shortUrlCreated })
             }
         }
@@ -92,7 +93,6 @@ const CreateShortUrl = async (req, res) => {
 const redirectUrl = async (req, res) => {
     try {
         const requestParams = req.params.urlCode;
-
         let cahcedUrl = await GET_ASYNC(`${requestParams}`);
 
         if (cahcedUrl) {
@@ -100,7 +100,7 @@ const redirectUrl = async (req, res) => {
             res.status(302).redirect(data);
         } else {
             const url = await urlModel.findOne({ urlCode: requestParams });
-            await SET_ASYNC(`${requestParams}`, JSON.stringify(url.longUrl))
+            await SET_ASYNC(`${requestParams}`, JSON.stringify(url.longUrl), 'EX', 30)
 
             if (url) {
                 return res.status(302).redirect(url.longUrl);
