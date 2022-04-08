@@ -43,7 +43,7 @@ const CreateShortUrl = async (req, res) => {
         const { longUrl } = requestBody
 
         if (!isValid(longUrl)) {
-            return res.status(400).send({ tatus: false, message: "longUrl is required" });
+            return res.status(400).send({ status: false, message: "longUrl is required" });
         }
         if (!urlRegex.test(longUrl)) {
             return res.status(400).send({ status: false, message: "Please provide a valid url" });
@@ -80,7 +80,7 @@ const CreateShortUrl = async (req, res) => {
                 const shortUrl = `${baseUrl}/${urlCode}`;
                 const url = { longUrl, shortUrl, urlCode }
                 const shortUrlCreated = await urlModel.create(url);
-                await SET_ASYNC(`${longUrl}, "EXP" 10`, JSON.stringify(shortUrlCreated), 'EX', 30);
+                await SET_ASYNC(`${longUrl}`, JSON.stringify(shortUrlCreated), 'EX', 30);
 
                 res.status(201).send({ status: true, message: "success", data: shortUrlCreated })
             }
@@ -97,7 +97,7 @@ const redirectUrl = async (req, res) => {
 
         if (cahcedUrl) {
             const data = JSON.parse(cahcedUrl);
-            res.status(302).redirect(data);
+           return res.status(302).redirect(data);
         } else {
             const url = await urlModel.findOne({ urlCode: requestParams });
             await SET_ASYNC(`${requestParams}`, JSON.stringify(url.longUrl), 'EX', 30)
