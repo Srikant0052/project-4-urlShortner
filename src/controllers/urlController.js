@@ -1,6 +1,5 @@
 const urlModel = require('../models/urlModel');
 const redis = require("redis");
-// const shortid = require('shortid');
 
 const { promisify } = require("util");
 
@@ -32,7 +31,7 @@ const isValidRequestBody = (requestBody) => {
     if (Object.keys(requestBody).length) return true
     return false;
 }
-const urlRegex = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/
+const urlRegex = /^(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/
 const CreateShortUrl = async (req, res) => {
     try {
         const requestBody = req.body;
@@ -64,7 +63,6 @@ const CreateShortUrl = async (req, res) => {
 
                 return res.status(200).send({ status: true, message: "Success", data: urlCodeExist });
             } else {
-                //    const urlCode = shortid.generate();
                 function rand(length, ...ranges) {
                     let str = "";                                                       // the string (initialized to "")
                     while (length--) {                                                   // repeat this length of times
@@ -97,12 +95,12 @@ const redirectUrl = async (req, res) => {
 
         if (cahcedUrl) {
             const data = JSON.parse(cahcedUrl);
-           return res.status(302).redirect(data);
+            return res.status(302).redirect(data);
         } else {
-            const url = await urlModel.findOne({ urlCode: requestParams });
-            await SET_ASYNC(`${requestParams}`, JSON.stringify(url.longUrl), 'EX', 30)
+            const url = await urlModel.findOne({ urlCode: requestParams }).select({ _id: 0, __v: 0 }).lean();
 
             if (url) {
+                await SET_ASYNC(`${requestParams}`, JSON.stringify(url.longUrl), 'EX', 30)
                 return res.status(302).redirect(url.longUrl);
             } else {
                 return res.status(404).send({ status: false, message: "Url not found" })
